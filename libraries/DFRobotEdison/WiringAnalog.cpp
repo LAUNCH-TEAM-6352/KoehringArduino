@@ -223,6 +223,24 @@ void DFrobotEdison::setSpeed( const uint32_t whatSpeed )
 }
 
 /*
+ *brief: disable debugging on the ATMega8
+ *retval: NO
+ */
+ void DFrobotEdison::debugOff()
+{
+	writeToSlv(0x10, 0);
+}
+
+/*
+ *brief: enable debugging on the ATMega8
+ *retval: NO
+ */
+ void DFrobotEdison::debugOn()
+{
+	writeToSlv(0x11, 0);
+}
+
+/*
  *brief: write data to i2c slave
  *param: @(input) cmd:write control-cmd value
          @(input) value: write data

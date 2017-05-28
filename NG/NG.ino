@@ -26,13 +26,10 @@ Servo myservo;
 unsigned char cmd=0,arg=0;
 int ADC_value=0;
 unsigned char Check_State=0;
-#define DBG 1
+int DBG = 0;
 
 void setup()
 {
-#if (DBG == 1)
-  Serial.begin(115200);
-#endif
   Wire.begin(4);                         //set slave address  4
   Wire.onReceive(I2C_slave_receive_Handler);//Specify the function when i2c slave receives commands 
   Wire.onRequest(I2C_slave_send_Handler);   //Specify the function when i2c slave send data to host
@@ -45,89 +42,125 @@ void loop()
 // When receiving data from the bus, execute the function
 void I2C_slave_receive_Handler(int None)
 {
-	/* 55 aa cmd arg cs*/
 	int ok=0;
-    int count = 0;
+
+  /* 55 aa cmd arg cs*/
 	unsigned char header1,header2,cmd,arg,cs;
+ 
 	do{
-		while( Wire.available() == 0){ // The loop is executed, until the packets left with only one character
-                  if(++count == 1000) break;
-                  delay(1);
-                }
+    waitOnWire();
 		header1 = Wire.read(); //receives the last character
-#if (DBG==1)
-                Serial.print("header1=");Serial.println(header1,HEX);
-#endif
+    if (DBG)
+    {
+      Serial.print("millis=");
+      Serial.print(millis());
+      Serial.print(", header1=");
+      Serial.print(header1,HEX);
+    }
 		if(header1 != 0x55)
 			break;
-                count = 0;
-		while( Wire.available() == 0){
-                  if(++count == 1000) break;
-                  delay(1);
-                }
+
+    waitOnWire();
 		header2 = Wire.read();
-#if (DBG==1)
-                Serial.print("header2=");Serial.println(header2,HEX);
-#endif
+    if (DBG)
+    {
+      Serial.print(", header2=");
+      Serial.print(header2,HEX);
+    }
 		if(header2 != 0xaa)
 			break;
-                count=0;
-		while( Wire.available() == 0){
-                  if(++count == 1000) break;
-                  delay(1);
-                }
+
+    waitOnWire();
 		cmd = Wire.read();
-#if (DBG==1)
-                Serial.print("cmd=");Serial.println(cmd,HEX);
-#endif
-		count=0;
-                while( Wire.available() == 0){
-                  if(++count == 1000) break;
-                  delay(1);
-                }
+    if (DBG)
+    {
+      Serial.print(", cmd=");
+      Serial.print(cmd,HEX);
+    }
+
+    waitOnWire();
 		arg = Wire.read();
-#if (DBG==1)
-                Serial.print("arg=");Serial.println(arg,HEX);
-#endif
-                count=0;
-		while( Wire.available() == 0){
-                  if(++count == 1000) break;
-                  delay(1);
-                }
+    if (DBG)
+    {
+      Serial.print(", arg=");
+      Serial.print(arg,HEX);
+    }
+
+    waitOnWire();
 		cs = Wire.read();
-#if (DBG==1)
-                Serial.print("cs=");Serial.println(cs,HEX);
-#endif
+    if (DBG)
+    {
+      Serial.print(", cs=");
+      Serial.print(cs,HEX);
+    }
 		if(cs == (unsigned char)(header1+header2+cmd+arg)){
 			ok = 1;
 		}
-	}while(0);
+    if (DBG)
+    {
+      Serial.print(", ok=");
+      Serial.print(ok,HEX);
+    }
+	} while(0);
+
+  if (DBG)
+  {
+    Serial.println();
+  }
+
 	if(!ok){
-                //Serial.println("ok == 0");
 		return;
 	}
-        exec(cmd,arg);
-	ok=0;
+ 
+  exec(cmd,arg);
 }
+
+void waitOnWire()
+{
+    int count = 0;
+    
+    // The loop is executed, until the packets left with only one character
+    while( Wire.available() == 0)
+    {
+      if(++count == 1000) break;
+      delay(1);
+    }
+}
+
 void exec(unsigned char cmd, unsigned char arg)
 {
 	unsigned char x = cmd &0x0F;
 	switch(cmd&0xF0){
+    // Enable/disable debug:
+    case 0x10:
+      if (x == 0 && DBG)
+      {
+        Serial.end();
+      }
+      else if (x != 0 && !DBG)
+      {
+        Serial.begin(115200);
+      }
+      DBG = x;
+      break;
+    
 		case 0xA0:
 			if(x > 3) x+=2;
 			if(x < 8)
 				pinMode(x+14, INPUT);//Set the Ax for analog input port
-                        if(arg)
-                                ADC_value=analogRead(x+14);
-		break;
+      if(arg)
+        ADC_value=analogRead(x+14);
+		  break;
+    
 		case 0xD0:
 			if(x > 3) x+=2;
 			if(x < 8){
 				pinMode(x+14, OUTPUT);//Set the Ax for digital output port
 				digitalWrite(x+14,  arg);
 			}
-		break;
-        case 0xB0: //moter direction
+		  break;
+    
+    case 0xB0: //moter direction
 			if(x == 1){//Setting M1 motor direction of rotation
 				pinMode(8, OUTPUT);
 				if(arg == 0)//Setting M1 motor clockwise rotation
@@ -141,23 +174,27 @@ void exec(unsigned char cmd, unsigned char arg)
 				else		  //Setting M2 motor anticlockwise rotation
 					digitalWrite(7,  HIGH);				
 			}
-		break;
+		  break;
+    
 		case 0xC0: //set moter speed
 			if(x == 1) //M1
 				analogWrite(10, arg);
 			else //M2
 				analogWrite(9,  arg);
-		break;
+		  break;
+    
 		case 0xE0: //servo control
 			if(x < 4){
 				myservo.attach(x+14);
 				myservo.write(map(arg, 0, 255, 0, 180));
 			}
-		break;
+		  break;
+      
 		default:
-		break;
+		  break;
 		}
 }
+
 //When the host control slave uploads the data, execute the function
 void I2C_slave_send_Handler()
 {

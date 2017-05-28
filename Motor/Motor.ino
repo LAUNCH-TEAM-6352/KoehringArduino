@@ -5,6 +5,7 @@ DFrobotEdison Motor;
 
 int ledValue = LOW;
 bool runMotor = true;
+bool debug = true;
 
 void setup() {
   if (runMotor)
@@ -17,10 +18,19 @@ void setup() {
 }
 
 void loop() {
+  if (debug)
+  {
+    Motor.debugOn();
+  }
+  else
+  {
+    Motor.debugOff();
+  }
+  
   if (runMotor)
   {
-    Motor.setDirection(CLOCKWISE); /*Motor clockwise rotation*/
-    Motor.move(); /*Start Motor*/
+    //Motor.setDirection(CLOCKWISE); /*Motor clockwise rotation*/
+    Motor.setSpeed(255 / 3);
   }
   blink(5, 1);
 
@@ -28,7 +38,7 @@ void loop() {
   {
     //Motor.stop();
     //Motor.setDirection(CLOCKWISE); /*Motor clockwise rotation*/
-    Motor.setSpeed(100); /*Motor speed*/
+    Motor.setSpeed(255 / 3 * 2);
   }
   blink(5, 2);
 
@@ -36,7 +46,7 @@ void loop() {
   {
     //Motor.stop();
     //Motor.setDirection(ANTICLOCKWISE); /*Motor anticlockwise rotation*/
-    Motor.setSpeed(200); /*Motor speed*/
+    Motor.setSpeed(255);
   } 
   blink(5, 3);
 

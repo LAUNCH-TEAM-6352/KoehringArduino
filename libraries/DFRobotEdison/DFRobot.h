@@ -41,7 +41,9 @@ class DFrobotEdison {
 		void move(void);
 		void setDirection(const uint8_t direction);
 		void setSpeed( const uint32_t whatSpeed );
-		void stop(void); 
+		void stop(void);
+		void debugOn();
+		void debugOff();
 		
 	private:
 		void writeToSlv(const uint32_t cmd, const uint32_t value );
