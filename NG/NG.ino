@@ -47,8 +47,12 @@ void I2C_slave_receive_Handler(int None)
   /* 55 aa cmd arg cs*/
 	unsigned char header1,header2,cmd,arg,cs;
  
-	do{
-    waitOnWire();
+	do
+	{
+    if (!waitOnWire())
+    {
+      break;
+    }
 		header1 = Wire.read(); //receives the last character
     if (DBG)
     {
@@ -60,7 +64,10 @@ void I2C_slave_receive_Handler(int None)
 		if(header1 != 0x55)
 			break;
 
-    waitOnWire();
+    if (!waitOnWire())
+    {
+      break;
+    }
 		header2 = Wire.read();
     if (DBG)
     {
@@ -70,7 +77,10 @@ void I2C_slave_receive_Handler(int None)
 		if(header2 != 0xaa)
 			break;
 
-    waitOnWire();
+    if (!waitOnWire())
+    {
+      break;
+    }
 		cmd = Wire.read();
     if (DBG)
     {
@@ -78,7 +88,10 @@ void I2C_slave_receive_Handler(int None)
       Serial.print(cmd,HEX);
     }
 
-    waitOnWire();
+    if (!waitOnWire())
+    {
+      break;
+    }
 		arg = Wire.read();
     if (DBG)
     {
@@ -86,26 +99,26 @@ void I2C_slave_receive_Handler(int None)
       Serial.print(arg,HEX);
     }
 
-    waitOnWire();
+    if (!waitOnWire())
+    {
+      break;
+    }
 		cs = Wire.read();
     if (DBG)
     {
       Serial.print(", cs=");
       Serial.print(cs,HEX);
     }
-		if(cs == (unsigned char)(header1+header2+cmd+arg)){
+		if (cs == (unsigned char)(header1+header2+cmd+arg))
+		{
 			ok = 1;
 		}
-    if (DBG)
-    {
-      Serial.print(", ok=");
-      Serial.print(ok,HEX);
-    }
 	} while(0);
 
   if (DBG)
   {
-    Serial.println();
+    Serial.print(", ok=");
+    Serial.println(ok,HEX);
   }
 
 	if(!ok){
@@ -115,16 +128,21 @@ void I2C_slave_receive_Handler(int None)
   exec(cmd,arg);
 }
 
-void waitOnWire()
+bool waitOnWire()
 {
     int count = 0;
     
     // The loop is executed, until the packets left with only one character
     while( Wire.available() == 0)
     {
-      if(++count == 1000) break;
+      if (++count == 1000)
+      {
+        return false;
+      }
       delay(1);
     }
+
+    return true;
 }
 
 void exec(unsigned char cmd, unsigned char arg)
