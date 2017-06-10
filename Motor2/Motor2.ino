@@ -4,7 +4,7 @@
 DFrobotEdison Motor;
 
 int ledValue = LOW;
-bool runMotor = true;
+bool runMotor = false;
 bool sendDebug = false;
 bool debug = true;
 unsigned long lastSpeedChange = 0;
@@ -44,16 +44,6 @@ void loop()
     {
       debug ? Motor.debugOn() : Motor.debugOff();
       delay(20);
-      Serial.print("speeds=");
-      for (int i = 0; i < numSpeeds; i++)
-      {
-        if (i > 0)
-        {
-          Serial.print(", ");
-        }
-        Serial.print(speeds[i]);
-      }
-      Serial.println();
     }
     lastDebugChange = curMillis;
   }
@@ -63,10 +53,14 @@ void loop()
   {
     // Advance speed index, wrapping back to 0 if necessary:
     speedIndex = speedIndex >= numSpeeds-1 ? 0 : speedIndex + 1;
-    Serial.print("curMillis: ");
-    Serial.print(curMillis);
-    Serial.print(", speedIndex: ");
-    Serial.println(speedIndex);
+
+    if (debug)
+    {
+      Serial.print("curMillis: ");
+      Serial.print(curMillis);
+      Serial.print(", speedIndex: ");
+      Serial.println(speedIndex);
+    }
     
     if (runMotor)
     {
